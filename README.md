@@ -11,14 +11,31 @@ py -m venv .venv
 .\.venv\Scripts\dbt.exe show --select daily_trip_summary --limit 20 --profiles-dir .
 ```
 
-The database is created at `data/nyc_cabs.duckdb`.
+The DuckDB catalog is created at `data/nyc_cabs.duckdb`. Persisted intermediate and mart results are written as Parquet under `data/models/`; DuckDB keeps lightweight views over those files for dbt references and interactive SQL.
 
 The build also writes these DuckDB query results back to Parquet:
 
 - `data/exports/daily_trip_summary.parquet`
 - `data/exports/monthly_borough_performance.parquet`
 
-This makes both directions explicit: DuckDB reads the remote TLC Parquet files, dbt transforms them, DuckDB stores tables in `nyc_cabs.duckdb`, and export models write new Parquet files.
+This makes both directions explicit: DuckDB reads the remote TLC Parquet files, dbt transforms them, persisted models are stored as Parquet, and the DuckDB catalog exposes views over those files.
+
+## Run project parts
+
+The root `run.ps1` script provides named entry points:
+
+```powershell
+.\run.ps1 -Part staging
+.\run.ps1 -Part intermediate
+.\run.ps1 -Part marts
+.\run.ps1 -Part exports
+.\run.ps1 -Part models
+.\run.ps1 -Part test
+.\run.ps1 -Part build
+.\run.ps1 -Part benchmark -Years 2025,2026
+```
+
+Intermediate and mart runs include their upstream dependencies. `models` runs models without tests; `build` runs models and tests in dependency order.
 
 ## Choose another month or an S3 source
 
@@ -54,6 +71,8 @@ Writing to S3 requires `s3:PutObject` permission for the selected prefix. Local 
 
 DuckDB pushes selected columns and filters into each Parquet scan, so it does not need to download the complete source files. The resulting local mart covers every configured month.
 
+The DuckDB profile disables HTTP keep-alive and uses longer timeouts with retries for the public TLC CDN. These settings avoid transient `HTTP 0 Internal Server Error` failures seen during multi-file scans.
+
 ## Data volume benchmark
 
 Inspect the configured remote Parquet volume, the local DuckDB file size, and row counts without rebuilding:
@@ -62,11 +81,13 @@ Inspect the configured remote Parquet volume, the local DuckDB file size, and ro
 .\.venv\Scripts\python.exe tools\benchmark.py
 ```
 
-Run a timed clean build in a temporary directory (the normal database and exports are not replaced):
+Run a timed clean model-processing pass in a temporary directory (the normal database and exports are not replaced):
 
 ```powershell
 .\.venv\Scripts\python.exe tools\benchmark.py --run
 ```
+
+The timed command uses `dbt run`, not `dbt build`. Running source tests before model materialization causes additional full remote scans and can trigger the public TLC CDN's range-request rate limit. Run `dbt test` separately when validating the resulting project database.
 
 Limit both the source report and clean build to selected years:
 
@@ -82,7 +103,7 @@ Persist a report for comparison with later runs:
 .\.venv\Scripts\python.exe tools\benchmark.py --run --output benchmarks\latest.json
 ```
 
-`--output` writes a concise JSON summary and creates missing parent directories. It includes source volume coverage, database size, relation row counts, and clean-build timing when `--run` is used. A current inspection snapshot is kept in `benchmarks/latest.json`.
+Every invocation automatically writes a concise JSON summary to `benchmarks/latest.json`. It includes source volume coverage, database size, relation row counts, and clean-build timing when `--run` is used. Use `--output` only when you want a different path; missing parent directories are created automatically. Failed builds are also persisted with `succeeded: false`.
 
 ## Lineage and documentation
 
@@ -127,7 +148,7 @@ The SQL is intentionally split into composable files:
 
 Change `high_value_fare_threshold` or add a numeric field to `summary_metrics` in `dbt_project.yml` to alter generated SQL without duplicating aggregate expressions. Shared SQL lives in `macros/`, including payment labels and division-by-zero protection.
 
-`int_trips_enriched` is intentionally materialized as a local DuckDB table. The public Parquet files are scanned once during a build; downstream parameter changes and tests then execute locally without repeatedly hitting the TLC endpoint.
+`int_trips_enriched` is materialized as Parquet under `data/models/`. The public source files are scanned once to create it; downstream models and tests then read the local Parquet result without repeatedly hitting the TLC endpoint.
 
 ## Query parameters
 

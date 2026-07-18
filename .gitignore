@@ -3,6 +3,7 @@
 data/*.duckdb
 data/*.duckdb.wal
 data/exports/*.parquet
+data/models/*.parquet
 target/
 logs/
 dbt_packages/

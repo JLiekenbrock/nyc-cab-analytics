@@ -37,8 +37,10 @@ models:
     staging:
       +materialized: view
     intermediate:
-      +materialized: view
+      +materialized: external
+      +format: parquet
     marts:
-      +materialized: table
+      +materialized: external
+      +format: parquet
     exports:
       +materialized: external

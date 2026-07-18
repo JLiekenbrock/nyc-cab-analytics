@@ -4,17 +4,31 @@ nyc_cab_analytics:
     public:
       type: duckdb
       path: "{{ env_var('DUCKDB_PATH', 'data/nyc_cabs.duckdb') }}"
+      external_root: "{{ env_var('PARQUET_OUTPUT_ROOT', 'data/models') }}"
       threads: 4
       extensions:
         - httpfs
         - parquet
+      settings:
+        http_keep_alive: false
+        http_retries: 10
+        http_retry_wait_ms: 500
+        http_retry_backoff: 2
+        http_timeout: 120
     private:
       type: duckdb
       path: "{{ env_var('DUCKDB_PATH', 'data/nyc_cabs.duckdb') }}"
+      external_root: "{{ env_var('PARQUET_OUTPUT_ROOT', 'data/models') }}"
       threads: 4
       extensions:
         - httpfs
         - parquet
+      settings:
+        http_keep_alive: false
+        http_retries: 10
+        http_retry_wait_ms: 500
+        http_retry_backoff: 2
+        http_timeout: 120
       secrets:
         - type: s3
           provider: credential_chain

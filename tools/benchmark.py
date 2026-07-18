@@ -93,10 +93,25 @@ def database_stats(path: Path) -> dict[str, object]:
         con.close()
 
 
+def parquet_stats(root: Path) -> dict[str, object]:
+    files = sorted(root.rglob("*.parquet")) if root.exists() else []
+    return {
+        "root": str(root),
+        "file_count": len(files),
+        "total_bytes": sum(path.stat().st_size for path in files),
+        "files": [
+            {"name": str(path.relative_to(root)), "bytes": path.stat().st_size}
+            for path in files
+        ],
+    }
+
+
 def run_build(sources: list[str]) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="nyc-cab-benchmark-") as temp:
         temp_path = Path(temp)
         db_path = temp_path / "benchmark.duckdb"
+        parquet_root = temp_path / "models"
+        parquet_root.mkdir(parents=True, exist_ok=True)
         env = os.environ.copy()
         env.update(
             {
@@ -104,12 +119,15 @@ def run_build(sources: list[str]) -> dict[str, object]:
                 "DAILY_SUMMARY_EXPORT_PATH": str(temp_path / "daily.parquet"),
                 "MONTHLY_PERFORMANCE_EXPORT_PATH": str(temp_path / "monthly.parquet"),
                 "TLC_TRIP_DATA_FILES": repr(sources),
+                "PARQUET_OUTPUT_ROOT": str(parquet_root),
             }
         )
         dbt = Path(sys.executable).with_name("dbt.exe" if os.name == "nt" else "dbt")
-        # Serialize remote scans: the public TLC CDN intermittently rejects
-        # concurrent DuckDB requests during clean builds.
-        command = [str(dbt), "build", "--threads", "1", "--profiles-dir", str(ROOT)]
+        # Benchmark model processing rather than `dbt build`: source tests would
+        # scan the remote Parquet files before the models and can trigger the
+        # public TLC CDN's range-request rate limit. Tests can be timed separately
+        # after data has been materialized when required.
+        command = [str(dbt), "run", "--threads", "1", "--profiles-dir", str(ROOT)]
         started = time.perf_counter()
         result = subprocess.run(command, cwd=ROOT, env=env)
         elapsed = time.perf_counter() - started
@@ -118,6 +136,7 @@ def run_build(sources: list[str]) -> dict[str, object]:
             "succeeded": result.returncode == 0,
             "return_code": result.returncode,
             "database": database_stats(db_path),
+            "parquet_outputs": parquet_stats(parquet_root),
         }
 
 
@@ -125,7 +144,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", action="store_true", help="run a clean build in a temporary directory")
     parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
-    parser.add_argument("--output", type=Path, help="write the complete JSON report to this path")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/latest.json"),
+        help="write the concise JSON summary here (default: benchmarks/latest.json)",
+    )
     parser.add_argument(
         "--source-metadata",
         action="store_true",
@@ -176,23 +200,22 @@ def main() -> int:
     if args.run:
         report["clean_build"] = run_build([item["location"] for item in sources])
 
-    if args.output:
-        output = args.output if args.output.is_absolute() else ROOT / args.output
-        output.parent.mkdir(parents=True, exist_ok=True)
-        summary = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "source_file_count": len(sources),
-            "years": sorted(args.years) if args.years else None,
-            "source_sizes_known": report["source_sizes_known"],
-            "known_source_bytes": (
-                report["known_source_bytes"] if report["source_sizes_known"] else None
-            ),
-            "existing_database": report["existing_database"],
-            "note": report["note"],
-        }
-        if "clean_build" in report:
-            summary["clean_build"] = report["clean_build"]
-        output.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    output = args.output if args.output.is_absolute() else ROOT / args.output
+    output.parent.mkdir(parents=True, exist_ok=True)
+    summary = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_file_count": len(sources),
+        "years": sorted(args.years) if args.years else None,
+        "source_sizes_known": report["source_sizes_known"],
+        "known_source_bytes": (
+            report["known_source_bytes"] if report["source_sizes_known"] else None
+        ),
+        "existing_database": report["existing_database"],
+        "note": report["note"],
+    }
+    if "clean_build" in report:
+        summary["clean_build"] = report["clean_build"]
+    output.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
     if args.json:
         print(json.dumps(report, indent=2))
@@ -217,8 +240,7 @@ def main() -> int:
             if build["database"]["exists"]:
                 print(f"Clean build DB size:    {human_bytes(build['database']['file_bytes'])}")
         print(f"Note: {report['note']}")
-        if args.output:
-            print(f"Saved JSON report:      {output}")
+        print(f"Saved JSON report:      {output}")
     return 0 if not args.run or report["clean_build"]["succeeded"] else 1
 
 

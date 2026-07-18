@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-18T21:45:11.969574+00:00",
+  "generated_at": "2026-07-18T22:04:14.685937+00:00",
   "source_file_count": 17,
   "years": [
     2025,
@@ -41,14 +41,14 @@
   },
   "note": "Remote source-size probing was skipped; use --source-metadata to enable it.",
   "clean_build": {
-    "elapsed_seconds": 6.511,
+    "elapsed_seconds": 407.848,
     "succeeded": false,
     "return_code": 1,
     "database": {
-      "path": "C:\\Users\\janli\\AppData\\Local\\Temp\\nyc-cab-benchmark-2qecf6rb\\benchmark.duckdb",
+      "path": "C:\\Users\\janli\\AppData\\Local\\Temp\\nyc-cab-benchmark-nw_hlhqx\\benchmark.duckdb",
       "exists": true,
-      "file_bytes": 12288,
-      "database_size": "0 bytes",
+      "file_bytes": 274432,
+      "database_size": "290.5 MiB",
       "relations": []
     }
   }
