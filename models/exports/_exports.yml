@@ -1,0 +1,7 @@
+version: 2
+
+models:
+  - name: export_daily_trip_summary
+    description: Writes the daily mart to local or S3 Parquet using DuckDB's external materialization.
+  - name: export_monthly_borough_performance
+    description: Writes the monthly mart to local or S3 Parquet using DuckDB's external materialization.

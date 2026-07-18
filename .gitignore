@@ -2,6 +2,7 @@
 .env
 data/*.duckdb
 data/*.duckdb.wal
+data/exports/*.parquet
 target/
 logs/
 dbt_packages/

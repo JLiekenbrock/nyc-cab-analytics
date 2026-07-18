@@ -13,6 +13,13 @@ py -m venv .venv
 
 The database is created at `data/nyc_cabs.duckdb`.
 
+The build also writes these DuckDB query results back to Parquet:
+
+- `data/exports/daily_trip_summary.parquet`
+- `data/exports/monthly_borough_performance.parquet`
+
+This makes both directions explicit: DuckDB reads the remote TLC Parquet files, dbt transforms them, DuckDB stores tables in `nyc_cabs.duckdb`, and export models write new Parquet files.
+
 ## Choose another month or an S3 source
 
 Set the source for the current terminal before running dbt. For example, another month is:
@@ -30,6 +37,20 @@ $env:DBT_TARGET = 'private'
 $env:TLC_TRIP_DATA_FILES = "['s3://my-bucket/trips/year=2026/month=*/data.parquet']"
 .\.venv\Scripts\dbt.exe build --profiles-dir .
 ```
+
+The export models can write to S3 through the same private target:
+
+```powershell
+$env:DBT_TARGET = 'private'
+$env:AWS_PROFILE = 'analytics'
+$env:AWS_REGION = 'eu-central-1'
+$env:DAILY_SUMMARY_EXPORT_PATH = 's3://my-bucket/nyc-cabs/daily_trip_summary.parquet'
+$env:MONTHLY_PERFORMANCE_EXPORT_PATH = 's3://my-bucket/nyc-cabs/monthly_borough_performance.parquet'
+
+.\.venv\Scripts\dbt.exe build --select path:models/exports --profiles-dir .
+```
+
+Writing to S3 requires `s3:PutObject` permission for the selected prefix. Local exports need no cloud credentials.
 
 DuckDB pushes selected columns and filters into each Parquet scan, so it does not need to download the complete source files. The resulting local mart covers every configured month.
 
@@ -147,6 +168,7 @@ Get-Content target\compiled\nyc_cab_analytics\models\marts\payment_type_pivot.sq
 - `models/staging/`: typed, cleaned views
 - `models/intermediate/`: enriched trips and reusable templated aggregates
 - `models/marts/`: daily and monthly analytics tables
+- `models/exports/`: external models that write query results to Parquet or S3
 - `macros/`: reusable SQL and custom generic tests
 - `tests/`: cross-model reconciliation tests
 - `profiles.yml`: local DuckDB plus HTTP/S3 configuration
