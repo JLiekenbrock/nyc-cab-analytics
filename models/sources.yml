@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: nyc_tlc
+    description: NYC Taxi and Limousine Commission public trip records.
+    tables:
+      - name: yellow_trips
+        description: Monthly yellow taxi trip records, read directly from Parquet.
+        config:
+          external_location: >-
+            read_parquet({{ env_var('TLC_TRIP_DATA_FILES', "['https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-01.parquet','https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-02.parquet','https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-03.parquet','https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-04.parquet','https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2026-05.parquet']") }}, union_by_name=true)
+      - name: taxi_zones
+        description: TLC taxi-zone lookup table.
+        config:
+          external_location: "read_csv_auto('https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv', header=true)"

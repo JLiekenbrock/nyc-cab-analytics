@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: daily_trip_summary
+    description: Daily yellow taxi metrics grouped by pickup borough.
+    columns:
+      - name: pickup_date
+        data_tests: [not_null]
+      - name: pickup_borough
+        data_tests: [not_null]

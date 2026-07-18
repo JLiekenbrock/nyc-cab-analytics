@@ -1,0 +1,21 @@
+nyc_cab_analytics:
+  target: "{{ env_var('DBT_TARGET', 'public') }}"
+  outputs:
+    public:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'data/nyc_cabs.duckdb') }}"
+      threads: 4
+      extensions:
+        - httpfs
+        - parquet
+    private:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'data/nyc_cabs.duckdb') }}"
+      threads: 4
+      extensions:
+        - httpfs
+        - parquet
+      secrets:
+        - type: s3
+          provider: credential_chain
+          region: "{{ env_var('AWS_REGION', 'us-east-1') }}"

@@ -1,0 +1,15 @@
+[project]
+name = "nyc-cab-analytics"
+version = "0.1.0"
+description = "Local DuckDB and dbt starter for NYC TLC cab data"
+requires-python = ">=3.10"
+dependencies = [
+  "dbt-duckdb>=1.9,<2",
+  "duckdb>=1.4,<2",
+]
+
+[tool.uv]
+package = false
+
+[tool.setuptools]
+packages = []
