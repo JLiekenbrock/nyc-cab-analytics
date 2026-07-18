@@ -1,6 +1,6 @@
 # NYC cab analytics with DuckDB, S3, and dbt
 
-This project reads NYC TLC yellow-taxi Parquet directly into DuckDB through dbt. It defaults to all five complete 2026 months available when the project was created (January through May), using the official anonymous HTTPS endpoint. No raw-data download or AWS account is required.
+This project reads NYC TLC yellow-taxi Parquet directly into DuckDB through dbt. It defaults to 29 monthly files: all of 2024 and 2025 plus January through May 2026, using the official anonymous HTTPS endpoint. No raw-data download or AWS account is required.
 
 ## Quick start (PowerShell)
 
@@ -53,6 +53,22 @@ $env:MONTHLY_PERFORMANCE_EXPORT_PATH = 's3://my-bucket/nyc-cabs/monthly_borough_
 Writing to S3 requires `s3:PutObject` permission for the selected prefix. Local exports need no cloud credentials.
 
 DuckDB pushes selected columns and filters into each Parquet scan, so it does not need to download the complete source files. The resulting local mart covers every configured month.
+
+## Data volume benchmark
+
+Inspect the configured remote Parquet volume, the local DuckDB file size, and row counts without rebuilding:
+
+```powershell
+.\.venv\Scripts\python.exe tools\benchmark.py
+```
+
+Run a timed clean build in a temporary directory (the normal database and exports are not replaced):
+
+```powershell
+.\.venv\Scripts\python.exe tools\benchmark.py --run
+```
+
+Add `--json` for machine-readable output. The reported source volume is the sum of compressed object sizes and is an upper bound on network transfer, not an exact byte-scan counter. DuckDB can skip Parquet columns and row groups through projection and predicate pushdown. Set `TLC_TRIP_DATA_FILES` as usual to benchmark a different input set.
 
 ## Lineage and documentation
 
