@@ -68,7 +68,21 @@ Run a timed clean build in a temporary directory (the normal database and export
 .\.venv\Scripts\python.exe tools\benchmark.py --run
 ```
 
-Add `--json` for machine-readable output. The reported source volume is the sum of compressed object sizes and is an upper bound on network transfer, not an exact byte-scan counter. DuckDB can skip Parquet columns and row groups through projection and predicate pushdown. Set `TLC_TRIP_DATA_FILES` as usual to benchmark a different input set.
+Limit both the source report and clean build to selected years:
+
+```powershell
+.\.venv\Scripts\python.exe tools\benchmark.py --years 2025 2026 --run --output benchmarks\latest.json
+```
+
+Add `--json` for machine-readable output. Add `--source-metadata` to probe remote object sizes; this is disabled by default because some CDNs reject metadata requests with HTTP 403. The reported source volume is the sum of compressed object sizes and is an upper bound on network transfer, not an exact byte-scan counter. DuckDB can skip Parquet columns and row groups through projection and predicate pushdown. Set `TLC_TRIP_DATA_FILES` as usual to benchmark a different input set.
+
+Persist a report for comparison with later runs:
+
+```powershell
+.\.venv\Scripts\python.exe tools\benchmark.py --run --output benchmarks\latest.json
+```
+
+`--output` writes a concise JSON summary and creates missing parent directories. It includes source volume coverage, database size, relation row counts, and clean-build timing when `--run` is used. A current inspection snapshot is kept in `benchmarks/latest.json`.
 
 ## Lineage and documentation
 

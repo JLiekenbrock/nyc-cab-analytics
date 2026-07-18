@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 
 import duckdb
@@ -92,7 +93,7 @@ def database_stats(path: Path) -> dict[str, object]:
         con.close()
 
 
-def run_build() -> dict[str, object]:
+def run_build(sources: list[str]) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="nyc-cab-benchmark-") as temp:
         temp_path = Path(temp)
         db_path = temp_path / "benchmark.duckdb"
@@ -102,10 +103,13 @@ def run_build() -> dict[str, object]:
                 "DUCKDB_PATH": str(db_path),
                 "DAILY_SUMMARY_EXPORT_PATH": str(temp_path / "daily.parquet"),
                 "MONTHLY_PERFORMANCE_EXPORT_PATH": str(temp_path / "monthly.parquet"),
+                "TLC_TRIP_DATA_FILES": repr(sources),
             }
         )
         dbt = Path(sys.executable).with_name("dbt.exe" if os.name == "nt" else "dbt")
-        command = [str(dbt), "build", "--profiles-dir", str(ROOT)]
+        # Serialize remote scans: the public TLC CDN intermittently rejects
+        # concurrent DuckDB requests during clean builds.
+        command = [str(dbt), "build", "--threads", "1", "--profiles-dir", str(ROOT)]
         started = time.perf_counter()
         result = subprocess.run(command, cwd=ROOT, env=env)
         elapsed = time.perf_counter() - started
@@ -121,15 +125,41 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run", action="store_true", help="run a clean build in a temporary directory")
     parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    parser.add_argument("--output", type=Path, help="write the complete JSON report to this path")
+    parser.add_argument(
+        "--source-metadata",
+        action="store_true",
+        help="probe HTTP source object sizes (some CDNs reject these requests)",
+    )
+    parser.add_argument(
+        "--years",
+        nargs="+",
+        type=int,
+        metavar="YEAR",
+        help="process only source filenames matching these years",
+    )
     args = parser.parse_args()
 
+    configured = configured_sources()
+    if args.years:
+        years = set(args.years)
+        configured = [
+            source
+            for source in configured
+            if (match := re.search(r"yellow_tripdata_(\d{4})-\d{2}\.parquet$", source))
+            and int(match.group(1)) in years
+        ]
+        if not configured:
+            parser.error(f"no configured sources matched years: {sorted(years)}")
+
     sources = []
-    for source in configured_sources():
-        try:
-            size = remote_size(source)
-            error = None
-        except Exception as exc:  # A report should survive unavailable remote metadata.
-            size, error = None, str(exc)
+    for source in configured:
+        size, error = None, None
+        if args.source_metadata:
+            try:
+                size = remote_size(source)
+            except Exception as exc:  # A report should survive unavailable remote metadata.
+                error = str(exc)
         sources.append({"location": source, "compressed_bytes": size, "error": error})
 
     report: dict[str, object] = {
@@ -137,19 +167,44 @@ def main() -> int:
         "known_source_bytes": sum(item["compressed_bytes"] or 0 for item in sources),
         "source_sizes_known": sum(item["compressed_bytes"] is not None for item in sources),
         "existing_database": database_stats(DEFAULT_DB),
-        "note": "Source bytes are compressed object sizes; actual bytes read may be lower due to Parquet pushdown.",
+        "note": (
+            "Source bytes are compressed object sizes; actual bytes read may be lower due to Parquet pushdown."
+            if args.source_metadata
+            else "Remote source-size probing was skipped; use --source-metadata to enable it."
+        ),
     }
     if args.run:
-        report["clean_build"] = run_build()
+        report["clean_build"] = run_build([item["location"] for item in sources])
+
+    if args.output:
+        output = args.output if args.output.is_absolute() else ROOT / args.output
+        output.parent.mkdir(parents=True, exist_ok=True)
+        summary = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "source_file_count": len(sources),
+            "years": sorted(args.years) if args.years else None,
+            "source_sizes_known": report["source_sizes_known"],
+            "known_source_bytes": (
+                report["known_source_bytes"] if report["source_sizes_known"] else None
+            ),
+            "existing_database": report["existing_database"],
+            "note": report["note"],
+        }
+        if "clean_build" in report:
+            summary["clean_build"] = report["clean_build"]
+        output.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
     if args.json:
         print(json.dumps(report, indent=2))
     else:
         coverage = f"{report['source_sizes_known']}/{len(sources)} file sizes known"
-        print(f"Configured source volume: {human_bytes(report['known_source_bytes'])} ({coverage})")
-        for item in sources:
-            suffix = item["error"] or human_bytes(item["compressed_bytes"])
-            print(f"  {suffix:>12}  {item['location']}")
+        if args.source_metadata:
+            print(f"Configured source volume: {human_bytes(report['known_source_bytes'])} ({coverage})")
+            for item in sources:
+                suffix = item["error"] or human_bytes(item["compressed_bytes"])
+                print(f"  {suffix:>12}  {item['location']}")
+        else:
+            print(f"Configured sources:      {len(sources)} files (size probing skipped)")
         existing = report["existing_database"]
         if existing["exists"]:
             print(f"Existing DuckDB file:   {human_bytes(existing['file_bytes'])} ({existing['database_size']})")
@@ -161,7 +216,9 @@ def main() -> int:
             print(f"Clean build elapsed:    {build['elapsed_seconds']:.3f} seconds, {status}")
             if build["database"]["exists"]:
                 print(f"Clean build DB size:    {human_bytes(build['database']['file_bytes'])}")
-        print("Note: source volume is compressed size, not necessarily bytes transferred/scanned.")
+        print(f"Note: {report['note']}")
+        if args.output:
+            print(f"Saved JSON report:      {output}")
     return 0 if not args.run or report["clean_build"]["succeeded"] else 1
 
 

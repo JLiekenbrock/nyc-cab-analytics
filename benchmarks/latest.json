@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-07-18T21:45:11.969574+00:00",
+  "source_file_count": 17,
+  "years": [
+    2025,
+    2026
+  ],
+  "source_sizes_known": 0,
+  "known_source_bytes": null,
+  "existing_database": {
+    "path": "C:\\Users\\janli\\Documents\\cabs\\data\\nyc_cabs.duckdb",
+    "exists": true,
+    "file_bytes": 661401600,
+    "database_size": "630.7 MiB",
+    "relations": [
+      {
+        "relation": "main.daily_trip_summary",
+        "rows": 1216
+      },
+      {
+        "relation": "main.fare_segment_summary",
+        "rows": 130
+      },
+      {
+        "relation": "main.int_trips_enriched",
+        "rows": 18999277
+      },
+      {
+        "relation": "main.metric_catalog",
+        "rows": 48
+      },
+      {
+        "relation": "main.monthly_borough_performance",
+        "rows": 48
+      },
+      {
+        "relation": "main.payment_type_pivot",
+        "rows": 48
+      }
+    ]
+  },
+  "note": "Remote source-size probing was skipped; use --source-metadata to enable it.",
+  "clean_build": {
+    "elapsed_seconds": 6.511,
+    "succeeded": false,
+    "return_code": 1,
+    "database": {
+      "path": "C:\\Users\\janli\\AppData\\Local\\Temp\\nyc-cab-benchmark-2qecf6rb\\benchmark.duckdb",
+      "exists": true,
+      "file_bytes": 12288,
+      "database_size": "0 bytes",
+      "relations": []
+    }
+  }
+}
