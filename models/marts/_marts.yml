@@ -39,6 +39,20 @@ models:
           - accepted_values:
               arguments:
                 values: [short, medium, long, unclassified]
+  - name: payment_type_pivot
+    description: Jinja-generated pivot whose dimensions, payment groups, and revenue columns are project variables.
+    columns:
+      - name: total_trip_count
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 1
+  - name: metric_catalog
+    description: Demonstrates a macro that generates multiple aggregate expressions from metric and aggregation lists.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_month, pickup_borough]
 
 exposures:
   - name: local_taxi_performance_dashboard
@@ -50,6 +64,7 @@ exposures:
       - ref('daily_trip_summary')
       - ref('monthly_borough_performance')
       - ref('fare_segment_summary')
+      - ref('payment_type_pivot')
     owner:
       name: Analytics team
       email: analytics@example.com

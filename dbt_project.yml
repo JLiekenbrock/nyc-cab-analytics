@@ -20,6 +20,12 @@ vars:
     - {name: short, min_miles: 0, max_miles: 2}
     - {name: medium, min_miles: 2, max_miles: 10}
     - {name: long, min_miles: 10, max_miles: null}
+  payment_type_groups:
+    - {name: credit_card, values: [1]}
+    - {name: cash, values: [2]}
+    - {name: other, values: [3, 4, 5, 6]}
+  payment_pivot_dimensions: [pickup_month, pickup_borough]
+  include_payment_revenue: true
   summary_metrics:
     - trip_distance_miles
     - fare_amount

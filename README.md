@@ -114,6 +114,33 @@ For an ad-hoc parameterized query that does not create a model, call the `query_
 
 The reusable `apply_trip_filters` macro safely quotes borough values and renders only predicates whose parameters are supplied. `fare_segment` turns the configured list of distance boundaries into a SQL `case` expression.
 
+## Jinja-generated SQL
+
+Two marts are focused examples of Jinja generating SQL at compile time:
+
+- `payment_type_pivot` loops through `payment_type_groups` and creates count/revenue columns for every group. `include_payment_revenue: false` removes all generated revenue columns.
+- `metric_catalog` calls `render_metric_columns`, which nests metric and aggregation loops to create the select list. The macro raises a compiler error for an empty metric list or unsupported aggregation.
+
+For example, this override changes both the grain and generated pivot columns:
+
+```powershell
+$pivotVars = @'
+{
+  payment_pivot_dimensions: ['pickup_month', 'day_type'],
+  include_payment_revenue: false,
+  payment_type_groups: [
+    {name: card, values: [1]},
+    {name: non_card, values: [2, 3, 4, 5, 6]}
+  ]
+}
+'@
+
+.\.venv\Scripts\dbt.exe compile --select payment_type_pivot --vars $pivotVars --profiles-dir .
+Get-Content target\compiled\nyc_cab_analytics\models\marts\payment_type_pivot.sql
+```
+
+`dbt compile` is a useful way to learn and debug Jinja because it renders templates without executing the resulting query.
+
 ## Project layout
 
 - `models/sources.yml`: external Parquet and taxi-zone sources
