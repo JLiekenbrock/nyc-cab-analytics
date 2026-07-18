@@ -5,11 +5,22 @@ config-version: 2
 profile: nyc_cab_analytics
 model-paths: ["models"]
 test-paths: ["tests"]
+macro-paths: ["macros"]
 clean-targets: ["target", "dbt_packages", "data/nyc_cabs.duckdb"]
+
+vars:
+  high_value_fare_threshold: 50
+  summary_metrics:
+    - trip_distance_miles
+    - fare_amount
+    - tip_amount
+    - total_amount
 
 models:
   nyc_cab_analytics:
     staging:
+      +materialized: view
+    intermediate:
       +materialized: view
     marts:
       +materialized: table

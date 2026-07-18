@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: int_trips_enriched
+    description: Trips enriched with pickup/dropoff zones and reusable business classifications.
+    columns:
+      - name: pickup_location_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_taxi_zones')
+                field: location_id
+              config:
+                severity: warn
+      - name: trip_duration_minutes
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+      - name: tip_rate
+        description: Tip divided by fare; null when fare is zero.
+  - name: int_daily_borough_metrics
+    description: Reusable daily aggregate that feeds downstream marts.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_date, pickup_borough, day_type]
+    columns:
+      - name: trip_count
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 1

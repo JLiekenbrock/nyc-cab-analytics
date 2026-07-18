@@ -1,18 +1,11 @@
-with trips as (
-    select * from {{ ref('stg_yellow_trips') }}
-),
-zones as (
-    select * from {{ ref('stg_taxi_zones') }}
-)
 select
-    cast(t.pickup_at as date) as pickup_date,
-    coalesce(z.borough, 'Unknown') as pickup_borough,
-    count(*) as trip_count,
-    round(sum(t.trip_distance_miles), 2) as total_distance_miles,
-    round(avg(t.trip_distance_miles), 2) as avg_distance_miles,
-    round(sum(t.fare_amount), 2) as fare_amount,
-    round(sum(t.tip_amount), 2) as tip_amount,
-    round(sum(t.total_amount), 2) as total_amount
-from trips t
-left join zones z on t.pickup_location_id = z.location_id
+    pickup_date,
+    pickup_borough,
+    sum(trip_count) as trip_count,
+    round(sum(total_trip_distance_miles), 2) as total_distance_miles,
+    round({{ safe_divide('sum(total_trip_distance_miles)', 'sum(trip_count)') }}, 2) as avg_distance_miles,
+    round(sum(total_fare_amount), 2) as fare_amount,
+    round(sum(total_tip_amount), 2) as tip_amount,
+    round(sum(total_total_amount), 2) as total_amount
+from {{ ref('int_daily_borough_metrics') }}
 group by 1, 2

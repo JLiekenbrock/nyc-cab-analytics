@@ -8,3 +8,35 @@ models:
         data_tests: [not_null]
       - name: pickup_borough
         data_tests: [not_null]
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_date, pickup_borough]
+  - name: monthly_borough_performance
+    description: Monthly borough KPIs generated from the configured metric list.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_month, pickup_borough]
+    columns:
+      - name: pickup_month
+        data_tests: [not_null]
+      - name: high_value_trip_rate
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+
+exposures:
+  - name: local_taxi_performance_dashboard
+    label: Local taxi performance dashboard
+    type: dashboard
+    maturity: low
+    description: Example downstream consumer shown in the dbt lineage graph.
+    depends_on:
+      - ref('daily_trip_summary')
+      - ref('monthly_borough_performance')
+    owner:
+      name: Analytics team
+      email: analytics@example.com
