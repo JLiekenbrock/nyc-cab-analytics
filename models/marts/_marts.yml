@@ -27,6 +27,18 @@ models:
               arguments:
                 min_value: 0
                 max_value: 1
+  - name: fare_segment_summary
+    description: Parameterized monthly metrics by configurable distance-based fare segment.
+    data_tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pickup_month, pickup_borough, fare_segment]
+    columns:
+      - name: fare_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [short, medium, long, unclassified]
 
 exposures:
   - name: local_taxi_performance_dashboard
@@ -37,6 +49,7 @@ exposures:
     depends_on:
       - ref('daily_trip_summary')
       - ref('monthly_borough_performance')
+      - ref('fare_segment_summary')
     owner:
       name: Analytics team
       email: analytics@example.com

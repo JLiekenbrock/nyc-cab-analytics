@@ -10,6 +10,16 @@ clean-targets: ["target", "dbt_packages", "data/nyc_cabs.duckdb"]
 
 vars:
   high_value_fare_threshold: 50
+  trip_filters:
+    start_date: null
+    end_date: null
+    pickup_boroughs: []
+    payment_types: []
+    min_distance_miles: 0
+  fare_segments:
+    - {name: short, min_miles: 0, max_miles: 2}
+    - {name: medium, min_miles: 2, max_miles: 10}
+    - {name: long, min_miles: 10, max_miles: null}
   summary_metrics:
     - trip_distance_miles
     - fare_amount

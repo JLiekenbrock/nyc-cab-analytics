@@ -76,6 +76,44 @@ The SQL is intentionally split into composable files:
 
 Change `high_value_fare_threshold` or add a numeric field to `summary_metrics` in `dbt_project.yml` to alter generated SQL without duplicating aggregate expressions. Shared SQL lives in `macros/`, including payment labels and division-by-zero protection.
 
+`int_trips_enriched` is intentionally materialized as a local DuckDB table. The public Parquet files are scanned once during a build; downstream parameter changes and tests then execute locally without repeatedly hitting the TLC endpoint.
+
+## Query parameters
+
+`int_trips_filtered` and `fare_segment_summary` accept build-time parameters through dbt's `--vars` option. The defaults in `dbt_project.yml` include every trip.
+
+```powershell
+$tripVars = @'
+{
+  trip_filters: {
+    start_date: '2026-03-01',
+    end_date: '2026-04-01',
+    pickup_boroughs: ['Manhattan', 'Queens'],
+    payment_types: [1, 2],
+    min_distance_miles: 1
+  }
+}
+'@
+
+.\.venv\Scripts\dbt.exe build --select +fare_segment_summary --vars $tripVars --profiles-dir .
+```
+
+Fare segments are also parameters. Override them without editing SQL:
+
+```powershell
+.\.venv\Scripts\dbt.exe build --select fare_segment_summary --vars "{fare_segments: [{name: local, min_miles: 0, max_miles: 5}, {name: long_haul, min_miles: 5, max_miles: null}]}" --profiles-dir .
+```
+
+For an ad-hoc parameterized query that does not create a model, call the `query_trip_summary` macro:
+
+```powershell
+.\.venv\Scripts\dbt.exe run-operation query_trip_summary `
+  --args "{start_date: '2026-05-01', end_date: '2026-06-01', pickup_boroughs: ['Manhattan'], payment_types: [1], min_distance_miles: 2, limit: 10}" `
+  --profiles-dir .
+```
+
+The reusable `apply_trip_filters` macro safely quotes borough values and renders only predicates whose parameters are supplied. `fare_segment` turns the configured list of distance boundaries into a SQL `case` expression.
+
 ## Project layout
 
 - `models/sources.yml`: external Parquet and taxi-zone sources

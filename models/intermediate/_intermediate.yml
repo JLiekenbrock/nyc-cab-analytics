@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: int_trips_enriched
-    description: Trips enriched with pickup/dropoff zones and reusable business classifications.
+    description: Locally materialized trips enriched with pickup/dropoff zones and reusable business classifications. Materializing prevents every downstream test from rescanning remote files.
     columns:
       - name: pickup_location_id
         data_tests:
@@ -31,3 +31,11 @@ models:
           - accepted_range:
               arguments:
                 min_value: 1
+  - name: int_trips_filtered
+    description: Enriched trips filtered by the trip_filters project variable.
+    columns:
+      - name: trip_distance_miles
+        data_tests:
+          - accepted_range:
+              arguments:
+                min_value: 0

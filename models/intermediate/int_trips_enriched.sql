@@ -1,3 +1,5 @@
+{{ config(materialized='table') }}
+
 with trips as (
     select * from {{ ref('stg_yellow_trips') }}
 ),
