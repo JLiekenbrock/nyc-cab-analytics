@@ -20,6 +20,98 @@ import duckdb
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def human_bytes(value: int | None) -> str:
+    if value is None:
+        return "n/a"
+    size = float(value)
+    for unit in ("B", "KiB", "MiB", "GiB", "TiB"):
+        if size < 1024 or unit == "TiB":
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    raise AssertionError("unreachable")
+
+
+def markdown(summary: dict[str, object]) -> str:
+    succeeded = bool(summary.get("succeeded"))
+    status = "SUCCESS" if succeeded else "FAILED"
+    bbox = summary.get("bbox", {})
+    environment = summary.get("environment", {})
+    database = summary.get("database", {})
+    nodes = summary.get("nodes", [])
+    outputs = summary.get("parquet_outputs", [])
+    total_output_bytes = sum(int(item.get("bytes", 0)) for item in outputs)
+    total_output_rows = sum(int(item.get("rows", 0)) for item in outputs)
+    base_output = next((item for item in outputs if item.get("name") == "int_places.parquet"), {})
+
+    lines = [
+        f"# Benchmark {summary.get('run_id', 'unknown')}",
+        "",
+        f"**{status}** - `{summary.get('dbt_command', 'unknown')}` completed in "
+        f"**{float(summary.get('elapsed_seconds', 0)):.3f} seconds**.",
+        "",
+        "## Overview",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+        f"| Release | `{summary.get('release', 'unknown')}` |",
+        f"| Bounding box | `{bbox.get('xmin')}, {bbox.get('ymin')}, {bbox.get('xmax')}, {bbox.get('ymax')}` |",
+        f"| Models executed | {len(nodes)} |",
+        f"| Output Parquet files | {len(outputs)} |",
+        f"| Places processed | {int(base_output.get('rows', 0)):,} |",
+        f"| Rows across all outputs | {total_output_rows:,} |",
+        f"| Output size (all files) | {human_bytes(total_output_bytes)} |",
+        f"| DuckDB catalog size | {human_bytes(database.get('bytes'))} |",
+        "",
+        "## Model timings",
+        "",
+        "| Model | Status | Seconds |",
+        "|---|---|---:|",
+    ]
+    for node in nodes:
+        name = str(node.get("unique_id", "unknown")).split(".")[-1]
+        seconds = float(node.get("execution_seconds") or 0)
+        lines.append(f"| `{name}` | {node.get('status', 'unknown')} | {seconds:.3f} |")
+
+    lines.extend(
+        [
+            "",
+            "## Parquet outputs",
+            "",
+            "| File | Rows | Size |",
+            "|---|---:|---:|",
+        ]
+    )
+    for item in outputs:
+        lines.append(
+            f"| `{item.get('name')}` | {int(item.get('rows', 0)):,} | "
+            f"{human_bytes(item.get('bytes'))} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Environment",
+            "",
+            "| Component | Version |",
+            "|---|---|",
+            f"| Platform | {environment.get('platform', 'unknown')} |",
+            f"| Python | {environment.get('python', 'unknown')} |",
+            f"| DuckDB | {environment.get('duckdb', 'unknown')} |",
+            f"| dbt Core | {environment.get('dbt_core', 'unknown')} |",
+            f"| dbt-DuckDB | {environment.get('dbt_duckdb', 'unknown')} |",
+            f"| Threads | {environment.get('threads', 'unknown')} |",
+            "",
+            "## Detailed artifacts",
+            "",
+        ]
+    )
+    artifacts = summary.get("artifacts", {})
+    for label, path in artifacts.items():
+        lines.append(f"- **{label.replace('_', ' ').title()}:** `{path}`")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def find_dbt() -> Path:
     name = "dbt.exe" if os.name == "nt" else "dbt"
     candidates = [Path(sys.executable).with_name(name), ROOT.parent / ".venv" / "Scripts" / name]
@@ -90,7 +182,20 @@ def main() -> int:
     parser.add_argument("--bbox", type=parse_bbox, default=parse_bbox("13.08,52.34,13.76,52.68"))
     parser.add_argument("--command", choices=("run", "build"), default="run")
     parser.add_argument("--output-root", type=Path, default=Path("benchmarks"))
+    parser.add_argument(
+        "--render-existing",
+        type=Path,
+        help="render an existing benchmark JSON as Markdown without running dbt",
+    )
     args = parser.parse_args()
+
+    if args.render_existing:
+        source = args.render_existing if args.render_existing.is_absolute() else ROOT / args.render_existing
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        destination = source.with_suffix(".md")
+        destination.write_text(markdown(payload), encoding="utf-8")
+        print(f"Human-readable benchmark: {destination}")
+        return 0
 
     now = datetime.now(timezone.utc)
     run_id = now.strftime("%Y%m%dT%H%M%S.%fZ")
@@ -181,11 +286,15 @@ def main() -> int:
     }
     summary_path = run_dir / "summary.json"
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    markdown_path = run_dir / "summary.md"
+    markdown_path.write_text(markdown(summary), encoding="utf-8")
     output_root.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(summary_path, output_root / "latest.json")
+    shutil.copyfile(markdown_path, output_root / "latest.md")
 
     print(f"\nDetailed benchmark: {summary_path}")
     print(f"Latest summary:     {output_root / 'latest.json'}")
+    print(f"Readable summary:   {output_root / 'latest.md'}")
     return return_code
 
 

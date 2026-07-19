@@ -42,7 +42,13 @@ Available parts are `compile`, `staging`, `models`, `test`, `build`, and `docs`.
   -Bbox '13.08,52.34,13.76,52.68'
 ```
 
-Each run creates `benchmarks/runs/<UTC timestamp>/` containing `summary.json`, the complete console log, dbt log, manifest, and `run_results.json`. `benchmarks/latest.json` always contains the most recent concise-but-detailed summary. It records total wall time, success/failure, every dbt node's compile/execute timestamps and duration, adapter responses, source parameters, versions, DuckDB size, and each output Parquet file's rows and bytes.
+Each run creates `benchmarks/runs/<UTC timestamp>/` containing `summary.json`, a human-readable `summary.md`, the complete console log, dbt log, manifest, and `run_results.json`. `benchmarks/latest.json` and `benchmarks/latest.md` always point to the most recent summaries. They cover total wall time, success/failure, every dbt node's timing, source parameters, versions, DuckDB size, and each output Parquet file's rows and bytes.
+
+Render Markdown for an existing JSON result without rerunning dbt:
+
+```powershell
+..\.venv\Scripts\python.exe tools\benchmark.py --render-existing benchmarks\latest.json
+```
 
 ## Outputs
 
