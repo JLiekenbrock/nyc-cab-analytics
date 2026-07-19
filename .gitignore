@@ -1,12 +1,2 @@
 .venv/
-.env
-data/*.duckdb
-data/*.duckdb.wal
-data/exports/*.parquet
-data/models/*.parquet
-target/
-logs/
-dbt_packages/
-__pycache__/
-*.egg-info/
-.user.yml
+.agents/
