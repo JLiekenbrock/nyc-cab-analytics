@@ -1,0 +1,9 @@
+version: 2
+models:
+  - name: stg_places
+    columns:
+      - {name: id, tests: [not_null, unique]}
+      - {name: category, tests: [not_null]}
+      - name: confidence
+        tests:
+          - accepted_range: {arguments: {min_value: 0, max_value: 1}}

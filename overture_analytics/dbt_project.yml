@@ -1,0 +1,16 @@
+name: overture_analytics
+version: "1.0.0"
+config-version: 2
+profile: overture_analytics
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+clean-targets: ["target", "dbt_packages", "data/overture.duckdb", "data/models"]
+vars:
+  bbox: {xmin: 13.08, ymin: 52.34, xmax: 13.76, ymax: 52.68}
+  density_grid_size: 0.02
+models:
+  overture_analytics:
+    staging: {+materialized: view}
+    intermediate: {+materialized: external, +format: parquet}
+    marts: {+materialized: external, +format: parquet}

@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: int_places
+    description: Locally persisted Parquet cache of the configured S3 geographic slice.
+    columns:
+      - {name: id, tests: [not_null, unique]}

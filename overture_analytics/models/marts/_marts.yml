@@ -1,0 +1,8 @@
+version: 2
+models:
+  - {name: category_summary, columns: [{name: category, tests: [not_null, unique]}]}
+  - {name: locality_summary}
+  - {name: operating_status_summary, columns: [{name: operating_status, tests: [not_null, unique]}]}
+  - {name: contactability_summary, columns: [{name: basic_category, tests: [not_null, unique]}]}
+  - {name: confidence_distribution, columns: [{name: confidence_band, tests: [not_null, unique]}]}
+  - {name: density_grid}

@@ -1,8 +1,17 @@
 param(
-    [ValidateSet('staging', 'intermediate', 'marts', 'exports', 'models', 'test', 'build', 'benchmark')]
+    [ValidateSet('staging', 'intermediate', 'marts', 'exports', 'models', 'test', 'build', 'benchmark', 'overture')]
     [string]$Part = 'build',
-    [int[]]$Years = @(2025, 2026),
-    [string]$ProfilesDir = $PSScriptRoot
+    [string]$Years = '2025,2026',
+    [string]$ProfilesDir = $PSScriptRoot,
+    [string]$Release = '2026-06-17.0',
+    [string]$Theme = 'places',
+    [string]$FeatureType = 'place',
+    [string]$Bbox,
+    [string]$Subtype,
+    [string]$FeatureClass,
+    [string]$Columns = '*',
+    [int]$Limit = 0,
+    [string]$Output = 'data\exports\overture_extract.parquet'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -32,8 +41,20 @@ try {
         'test'         { & $dbt test --profiles-dir $ProfilesDir }
         'build'        { & $dbt build --profiles-dir $ProfilesDir }
         'benchmark' {
-            $yearArgs = @($Years | ForEach-Object { $_.ToString() })
+            $yearArgs = @($Years -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
             & $python tools\benchmark.py --years @yearArgs --run
+        }
+        'overture' {
+            $arguments = @(
+                'tools\query_overture.py', '--release', $Release,
+                '--theme', $Theme, '--type', $FeatureType,
+                '--columns', $Columns, '--output', $Output
+            )
+            if ($Bbox) { $arguments += @('--bbox') + @($Bbox -split ',' | ForEach-Object { $_.Trim() }) }
+            if ($Subtype) { $arguments += @('--subtype', $Subtype) }
+            if ($FeatureClass) { $arguments += @('--class', $FeatureClass) }
+            if ($Limit -gt 0) { $arguments += @('--limit', $Limit.ToString()) }
+            & $python @arguments
         }
     }
     if ($LASTEXITCODE -ne 0) {

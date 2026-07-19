@@ -22,20 +22,42 @@ This makes both directions explicit: DuckDB reads the remote TLC Parquet files, 
 
 ## Run project parts
 
-The root `run.ps1` script provides named entry points:
+The root runner provides named entry points. On Windows systems that block direct PowerShell scripts, use `run.cmd` (it applies an execution-policy bypass only to its child PowerShell process):
 
 ```powershell
-.\run.ps1 -Part staging
-.\run.ps1 -Part intermediate
-.\run.ps1 -Part marts
-.\run.ps1 -Part exports
-.\run.ps1 -Part models
-.\run.ps1 -Part test
-.\run.ps1 -Part build
-.\run.ps1 -Part benchmark -Years 2025,2026
+.\run.cmd -Part staging
+.\run.cmd -Part intermediate
+.\run.cmd -Part marts
+.\run.cmd -Part exports
+.\run.cmd -Part models
+.\run.cmd -Part test
+.\run.cmd -Part build
+.\run.cmd -Part benchmark -Years 2025,2026
+.\run.cmd -Part overture -Theme places -FeatureType place -Bbox 13.08,52.34,13.76,52.68
 ```
 
 Intermediate and mart runs include their upstream dependencies. `models` runs models without tests; `build` runs models and tests in dependency order.
+
+## Configurable Overture S3 query
+
+Query the anonymous, Hive-partitioned Overture Maps GeoParquet release and write only the selected slice to local Parquet:
+
+```powershell
+.\run.cmd -Part overture `
+  -Release '2026-06-17.0' `
+  -Theme places `
+  -FeatureType place `
+  -Bbox 13.08,52.34,13.76,52.68 `
+  -Columns 'id,names,bbox,basic_category' `
+  -Limit 10000 `
+  -Output 'data\exports\berlin_places.parquet'
+```
+
+All query controls are optional. The bounding box uses WGS84 coordinates in `XMIN,YMIN,XMAX,YMAX` order and retains intersecting features. `Theme` and `FeatureType` select the S3 Hive partitions. `Subtype` and `FeatureClass` add exact filters for feature types whose schemas contain those fields; selected columns are likewise schema-dependent. Run the Python command directly for the same options:
+
+```powershell
+.\.venv\Scripts\python.exe tools\query_overture.py --help
+```
 
 ## Choose another month or an S3 source
 

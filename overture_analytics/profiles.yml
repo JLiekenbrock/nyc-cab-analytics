@@ -1,0 +1,16 @@
+overture_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', 'data/overture.duckdb') }}"
+      external_root: "{{ env_var('PARQUET_OUTPUT_ROOT', 'data/models') }}"
+      threads: 1
+      extensions: [httpfs, parquet]
+      settings:
+        s3_region: us-west-2
+        http_keep_alive: false
+        http_retries: 10
+        http_retry_wait_ms: 500
+        http_retry_backoff: 2
+        http_timeout: 120

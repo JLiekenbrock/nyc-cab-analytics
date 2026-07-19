@@ -1,0 +1,256 @@
+{
+  "run_id": "20260719T110345.323917Z",
+  "started_at": "2026-07-19T11:03:45.324917+00:00",
+  "completed_at": "2026-07-19T11:06:14.042196+00:00",
+  "succeeded": true,
+  "return_code": 0,
+  "elapsed_seconds": 148.679,
+  "dbt_command": "run",
+  "command": [
+    "C:\\Users\\janli\\Documents\\cabs\\.venv\\Scripts\\dbt.exe",
+    "run",
+    "--threads",
+    "1",
+    "--vars",
+    "{\"bbox\":{\"xmin\":13.08,\"ymin\":52.34,\"xmax\":13.76,\"ymax\":52.68}}",
+    "--profiles-dir",
+    "C:\\Users\\janli\\Documents\\cabs\\overture_analytics",
+    "--target-path",
+    "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z\\target",
+    "--log-path",
+    "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z\\logs"
+  ],
+  "release": "2026-06-17.0",
+  "bbox": {
+    "xmin": 13.08,
+    "ymin": 52.34,
+    "xmax": 13.76,
+    "ymax": 52.68
+  },
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "duckdb": "1.5.4",
+    "dbt_core": "1.12.0",
+    "dbt_duckdb": "1.10.1",
+    "threads": 1
+  },
+  "database": {
+    "path": "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\data\\overture.duckdb",
+    "bytes": 274432
+  },
+  "parquet_outputs": [
+    {
+      "name": "category_summary.parquet",
+      "bytes": 37018,
+      "rows": 1474
+    },
+    {
+      "name": "confidence_distribution.parquet",
+      "bytes": 594,
+      "rows": 4
+    },
+    {
+      "name": "contactability_summary.parquet",
+      "bytes": 8898,
+      "rows": 251
+    },
+    {
+      "name": "density_grid.parquet",
+      "bytes": 9054,
+      "rows": 551
+    },
+    {
+      "name": "int_places.parquet",
+      "bytes": 11478193,
+      "rows": 162163
+    },
+    {
+      "name": "locality_summary.parquet",
+      "bytes": 18552,
+      "rows": 1067
+    },
+    {
+      "name": "operating_status_summary.parquet",
+      "bytes": 719,
+      "rows": 3
+    }
+  ],
+  "nodes": [
+    {
+      "unique_id": "model.overture_analytics.stg_places",
+      "status": "success",
+      "execution_seconds": 123.01656723022461,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:03:48.786079Z",
+          "completed_at": "2026-07-19T11:03:48.794098Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:03:48.795100Z",
+          "completed_at": "2026-07-19T11:05:51.801646Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.int_places",
+      "status": "success",
+      "execution_seconds": 20.697597980499268,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:05:51.806154Z",
+          "completed_at": "2026-07-19T11:05:51.807656Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:05:51.807656Z",
+          "completed_at": "2026-07-19T11:06:12.502752Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.category_summary",
+      "status": "success",
+      "execution_seconds": 0.08202314376831055,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:06:12.506267Z",
+          "completed_at": "2026-07-19T11:06:12.508264Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:06:12.508264Z",
+          "completed_at": "2026-07-19T11:06:12.585788Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.confidence_distribution",
+      "status": "success",
+      "execution_seconds": 0.03658008575439453,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:06:12.590299Z",
+          "completed_at": "2026-07-19T11:06:12.592295Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:06:12.592295Z",
+          "completed_at": "2026-07-19T11:06:12.625874Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.contactability_summary",
+      "status": "success",
+      "execution_seconds": 0.04702591896057129,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:06:12.628380Z",
+          "completed_at": "2026-07-19T11:06:12.630380Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:06:12.630380Z",
+          "completed_at": "2026-07-19T11:06:12.675406Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.density_grid",
+      "status": "success",
+      "execution_seconds": 0.1075434684753418,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:06:12.677406Z",
+          "completed_at": "2026-07-19T11:06:12.679409Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:06:12.679409Z",
+          "completed_at": "2026-07-19T11:06:12.784949Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.locality_summary",
+      "status": "success",
+      "execution_seconds": 0.0721580982208252,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:06:12.787451Z",
+          "completed_at": "2026-07-19T11:06:12.789454Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:06:12.789454Z",
+          "completed_at": "2026-07-19T11:06:12.859609Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    },
+    {
+      "unique_id": "model.overture_analytics.operating_status_summary",
+      "status": "success",
+      "execution_seconds": 0.0394749641418457,
+      "thread_id": "Thread-1 (worker)",
+      "timing": {
+        "compile": {
+          "started_at": "2026-07-19T11:06:12.862609Z",
+          "completed_at": "2026-07-19T11:06:12.864747Z"
+        },
+        "execute": {
+          "started_at": "2026-07-19T11:06:12.864747Z",
+          "completed_at": "2026-07-19T11:06:12.901084Z"
+        }
+      },
+      "adapter_response": {
+        "_message": "OK"
+      },
+      "message": "OK",
+      "failures": null
+    }
+  ],
+  "artifacts": {
+    "run_directory": "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z",
+    "console_log": "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z\\console.log",
+    "dbt_log": "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z\\logs\\dbt.log",
+    "run_results": "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z\\target\\run_results.json",
+    "manifest": "C:\\Users\\janli\\Documents\\cabs\\overture_analytics\\benchmarks\\runs\\20260719T110345.323917Z\\target\\manifest.json"
+  }
+}

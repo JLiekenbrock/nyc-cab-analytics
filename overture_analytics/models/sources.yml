@@ -1,0 +1,9 @@
+version: 2
+sources:
+  - name: overture
+    description: Anonymous Overture Maps GeoParquet on S3.
+    tables:
+      - name: places
+        config:
+          external_location: >-
+            read_parquet('s3://overturemaps-us-west-2/release/{{ env_var("OVERTURE_RELEASE", "2026-06-17.0") }}/theme=places/type=place/*.parquet', hive_partitioning=true)
