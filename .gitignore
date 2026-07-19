@@ -1,2 +1,3 @@
 .venv/
 .agents/
+/hybrid_trino_duckdb/
