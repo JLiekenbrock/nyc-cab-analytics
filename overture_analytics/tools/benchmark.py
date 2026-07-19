@@ -18,6 +18,11 @@ import duckdb
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SCALES = {
+    "berlin": {"xmin": 13.08, "ymin": 52.34, "xmax": 13.76, "ymax": 52.68},
+    "germany": {"xmin": 5.866, "ymin": 47.270, "xmax": 15.042, "ymax": 55.099},
+    "europe": {"xmin": -10.75, "ymin": 34.5, "xmax": 31.6, "ymax": 71.2},
+}
 
 
 def human_bytes(value: int | None) -> str:
@@ -54,6 +59,7 @@ def markdown(summary: dict[str, object]) -> str:
         "| Metric | Value |",
         "|---|---:|",
         f"| Release | `{summary.get('release', 'unknown')}` |",
+        f"| Scale | `{summary.get('scale', 'custom')}` |",
         f"| Bounding box | `{bbox.get('xmin')}, {bbox.get('ymin')}, {bbox.get('xmax')}, {bbox.get('ymax')}` |",
         f"| Models executed | {len(nodes)} |",
         f"| Output Parquet files | {len(outputs)} |",
@@ -179,7 +185,13 @@ def node_results(run_results_path: Path) -> list[dict[str, object]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release", default="2026-06-17.0")
-    parser.add_argument("--bbox", type=parse_bbox, default=parse_bbox("13.08,52.34,13.76,52.68"))
+    parser.add_argument(
+        "--scale",
+        choices=(*SCALES.keys(), "custom"),
+        default="germany",
+        help="geographic benchmark preset (default: germany)",
+    )
+    parser.add_argument("--bbox", type=parse_bbox, help="custom xmin,ymin,xmax,ymax")
     parser.add_argument("--command", choices=("run", "build"), default="run")
     parser.add_argument("--output-root", type=Path, default=Path("benchmarks"))
     parser.add_argument(
@@ -197,6 +209,15 @@ def main() -> int:
         print(f"Human-readable benchmark: {destination}")
         return 0
 
+    if args.scale == "custom":
+        if args.bbox is None:
+            parser.error("--scale custom requires --bbox")
+        selected_bbox = args.bbox
+    else:
+        if args.bbox is not None:
+            parser.error("use --scale custom when supplying --bbox")
+        selected_bbox = SCALES[args.scale]
+
     now = datetime.now(timezone.utc)
     run_id = now.strftime("%Y%m%dT%H%M%S.%fZ")
     output_root = args.output_root if args.output_root.is_absolute() else ROOT / args.output_root
@@ -208,7 +229,7 @@ def main() -> int:
     log_dir.mkdir()
 
     dbt = find_dbt()
-    variables = json.dumps({"bbox": args.bbox}, separators=(",", ":"))
+    variables = json.dumps({"bbox": selected_bbox}, separators=(",", ":"))
     command = [
         str(dbt),
         args.command,
@@ -259,7 +280,8 @@ def main() -> int:
         "dbt_command": args.command,
         "command": command,
         "release": args.release,
-        "bbox": args.bbox,
+        "scale": args.scale,
+        "bbox": selected_bbox,
         "environment": {
             "python": platform.python_version(),
             "platform": platform.platform(),

@@ -2,7 +2,9 @@ param(
     [ValidateSet('compile', 'staging', 'models', 'test', 'build', 'docs', 'benchmark')]
     [string]$Part = 'build',
     [string]$Release = '2026-06-17.0',
-    [string]$Bbox = '13.08,52.34,13.76,52.68'
+    [string]$Bbox = '13.08,52.34,13.76,52.68',
+    [ValidateSet('berlin', 'germany', 'europe', 'custom')]
+    [string]$Scale = 'germany'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,7 +28,14 @@ try {
         'test'    { & $dbt test --vars $vars --profiles-dir . }
         'build'   { & $dbt build --vars $vars --profiles-dir . }
         'docs'    { & $dbt docs generate --vars $vars --profiles-dir . }
-        'benchmark' { & $python tools\benchmark.py --release $Release --bbox $Bbox }
+        'benchmark' {
+            if ($Scale -eq 'custom') {
+                & $python tools\benchmark.py --release $Release --scale custom --bbox $Bbox
+            }
+            else {
+                & $python tools\benchmark.py --release $Release --scale $Scale
+            }
+        }
     }
     exit $LASTEXITCODE
 }

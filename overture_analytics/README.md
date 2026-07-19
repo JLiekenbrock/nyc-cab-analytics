@@ -39,7 +39,18 @@ Available parts are `compile`, `staging`, `models`, `test`, `build`, and `docs`.
 ```powershell
 .\run.cmd -Part benchmark `
   -Release '2026-06-17.0' `
-  -Bbox '13.08,52.34,13.76,52.68'
+  -Scale germany
+```
+
+Benchmark scale presets:
+
+- `berlin` — quick city-scale validation
+- `germany` — default country-scale benchmark
+- `europe` — large explicit opt-in benchmark
+- `custom` — uses `-Bbox 'xmin,ymin,xmax,ymax'`
+
+```powershell
+.\run.cmd -Part benchmark -Scale custom -Bbox '2.22,48.80,2.47,48.91'
 ```
 
 Each run creates `benchmarks/runs/<UTC timestamp>/` containing `summary.json`, a human-readable `summary.md`, the complete console log, dbt log, manifest, and `run_results.json`. `benchmarks/latest.json` and `benchmarks/latest.md` always point to the most recent summaries. They cover total wall time, success/failure, every dbt node's timing, source parameters, versions, DuckDB size, and each output Parquet file's rows and bytes.
